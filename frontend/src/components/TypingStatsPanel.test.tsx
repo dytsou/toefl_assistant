@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Analytics from './Analytics';
+import { TypingStatsPanel } from './TypingStatsPanel';
 import { api } from '../api';
 
 vi.mock('../api', () => ({
@@ -60,7 +60,7 @@ const mockRows = [
   },
 ];
 
-describe('Analytics page', () => {
+describe('TypingStatsPanel', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset();
   });
@@ -74,7 +74,7 @@ describe('Analytics page', () => {
 
     render(
       <MemoryRouter>
-        <Analytics />
+        <TypingStatsPanel />
       </MemoryRouter>,
     );
 
@@ -86,7 +86,7 @@ describe('Analytics page', () => {
 
     render(
       <MemoryRouter>
-        <Analytics />
+        <TypingStatsPanel />
       </MemoryRouter>,
     );
 
@@ -95,8 +95,7 @@ describe('Analytics page', () => {
       expect(screen.getByText('Lecture Discussion')).toBeInTheDocument();
     });
 
-    const emailFilters = screen.getAllByRole('button', { name: 'Email' });
-    emailFilters[0].click();
+    screen.getByRole('button', { name: 'Email' }).click();
 
     await waitFor(() => {
       expect(screen.getByText('Campus Email')).toBeInTheDocument();

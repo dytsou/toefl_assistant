@@ -5,12 +5,12 @@ import {
   Route,
   Link,
   NavLink,
+  Navigate,
   useParams,
 } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Practice from "./pages/Practice";
 import ErrorLogs from "./pages/ErrorLogs";
-import Analytics from "./pages/Analytics";
 import SpeakingDashboard from "./pages/SpeakingDashboard";
 import SpeakingQuestion from "./pages/SpeakingQuestion";
 import SpeakingPractice from "./pages/SpeakingPractice";
@@ -22,7 +22,6 @@ import {
   Sparkles,
   Mic,
   PanelTopOpen,
-  BarChart3,
 } from "lucide-react";
 import { api, getGeminiModel, setGeminiModel, type GeminiModelConfig } from "./api";
 
@@ -98,22 +97,13 @@ function App() {
                 <span>Speaking</span>
               </NavLink>
               <NavLink
-                to="/analytics"
-                className={({ isActive }) =>
-                  `nav-pill ${isActive ? "is-active" : ""}`
-                }
-              >
-                <BarChart3 size={16} />
-                <span>Analytics</span>
-              </NavLink>
-              <NavLink
                 to="/errors"
                 className={({ isActive }) =>
                   `nav-pill ${isActive ? "is-active" : ""}`
                 }
               >
                 <AlertTriangle size={16} />
-                <span>Writing Errors</span>
+                <span>Writing Analytics</span>
               </NavLink>
               <NavLink
                 to="/speaking/errors"
@@ -153,8 +143,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/practice/:id" element={<PracticeRoute />} />
-            <Route path="/analytics" element={<Analytics />} />
             <Route path="/errors" element={<ErrorLogs />} />
+            <Route path="/analytics" element={<Navigate to="/errors?tab=analytics" replace />} />
             <Route path="/speaking" element={<SpeakingDashboard />} />
             <Route path="/speaking/:id" element={<SpeakingQuestion />} />
             <Route

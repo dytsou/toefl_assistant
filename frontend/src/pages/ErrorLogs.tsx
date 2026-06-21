@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Book, Check, ChevronRight, ClipboardList, MessageCircle, PenLine, Quote, ShieldCheck, Star, Users } from 'lucide-react';
 import { api } from '../api';
+import { TypingStatsPanel } from '../components/TypingStatsPanel';
+
+const WRITING_TABS = [
+  { id: 'errors', label: 'Error Log' },
+  { id: 'analytics', label: 'Typing Stats' },
+] as const;
+
+type WritingTab = (typeof WRITING_TABS)[number]['id'];
 
 const ERROR_CATEGORIES = [
   {
@@ -63,6 +72,8 @@ interface ErrorLogRow {
 }
 
 const ErrorLogs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab: WritingTab = searchParams.get('tab') === 'analytics' ? 'analytics' : 'errors';
   const [logs, setLogs] = useState<ErrorLogRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState('');
@@ -142,22 +153,50 @@ const ErrorLogs = () => {
   });
   const importantCount = logs.filter((log) => log.important).length;
 
+  const setActiveTab = (tab: WritingTab) => {
+    if (tab === 'analytics') {
+      setSearchParams({ tab: 'analytics' });
+      return;
+    }
+    setSearchParams({});
+  };
+
   return (
     <div className="animate-fade">
       <div className="error-log-header">
         <div>
-          <h1 className="text-3xl font-bold mb-4">Personal Error Log</h1>
+          <h1 className="text-3xl font-bold mb-4">Writing Analytics</h1>
           <p className="text-muted">
-            Review your edits by TOEFL scoring theme and focus on the patterns that cost the most points.
+            {activeTab === 'errors'
+              ? 'Review your edits by TOEFL scoring theme and focus on the patterns that cost the most points.'
+              : 'Track typing speed and flow across your practice sessions.'}
           </p>
+          <div className="writing-review-tabs" role="tablist" aria-label="Writing review sections">
+            {WRITING_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`writing-review-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="error-log-total">
-          <span>{logs.length}</span>
-          tracked edits
-        </div>
+        {activeTab === 'errors' && (
+          <div className="error-log-total">
+            <span>{logs.length}</span>
+            tracked edits
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
+      {activeTab === 'analytics' ? (
+        <TypingStatsPanel />
+      ) : isLoading ? (
         <div className="empty-state">Loading logs...</div>
       ) : (
         <div className="error-review-layout">

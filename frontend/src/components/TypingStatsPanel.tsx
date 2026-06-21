@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
-  BarChart3,
   BookOpen,
   Keyboard,
   Loader2,
@@ -22,7 +21,7 @@ import type { TypingStatsRow } from '../types';
 const QUESTION_TYPES = ['All', 'Email', 'Academic'] as const;
 type QuestionTypeFilter = (typeof QUESTION_TYPES)[number];
 
-const Analytics = () => {
+export function TypingStatsPanel() {
   const [rows, setRows] = useState<TypingStatsRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -35,7 +34,7 @@ const Analytics = () => {
       .then((res) => setRows(res.data))
       .catch((err) => {
         console.error(err);
-        setLoadError('Could not load typing analytics.');
+        setLoadError('Could not load typing stats.');
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -86,17 +85,11 @@ const Analytics = () => {
   }
 
   return (
-    <div className="animate-fade analytics-page">
+    <div className="analytics-page">
       <div className="analytics-header">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-            <BarChart3 className="text-primary" />
-            Typing Analytics
-          </h1>
-          <p className="text-muted">
-            Track WPM trends and flow ratio across practice sessions.
-          </p>
-        </div>
+        <p className="text-muted">
+          Track WPM trends and flow ratio across practice sessions.
+        </p>
         <div className="analytics-filters">
           {QUESTION_TYPES.map((type) => (
             <button
@@ -120,9 +113,7 @@ const Analytics = () => {
           </Link>
         </div>
       ) : filteredRows.length === 0 ? (
-        <div className="empty-state">
-          No {typeFilter} sessions yet.
-        </div>
+        <div className="empty-state">No {typeFilter} sessions yet.</div>
       ) : (
         <>
           <div className="analytics-summary-grid">
@@ -195,6 +186,4 @@ const Analytics = () => {
       )}
     </div>
   );
-};
-
-export default Analytics;
+}
