@@ -1,9 +1,13 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star } from 'lucide-react';
+import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star, Keyboard, ChevronDown } from 'lucide-react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import { api } from '../api';
+import { KeyboardHeatmap } from '../components/KeyboardHeatmap';
+import { TypingStatsSummary } from '../components/TypingStatsSummary';
+import { WpmTimelineChart } from '../components/WpmTimelineChart';
+import { useTypingAnalytics } from '../hooks/useTypingAnalytics';
 import { mapRevisions, type ErrorLog, type Question, type Revision } from '../types';
 
 const Practice = () => {
@@ -22,6 +26,15 @@ const Practice = () => {
   const timerRef = useRef<number | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const pendingToggles = useRef(new Set<number>());
+  const [heatmapOpen, setHeatmapOpen] = useState(false);
+  const {
+    liveStats,
+    recordKeyDown,
+    recordPaste,
+    recordChange,
+    getSnapshot,
+    reset: resetTypingAnalytics,
+  } = useTypingAnalytics();
 
   const currentReport = selectedRevision ?? revisions[0];
   const invalidLink = !id || Number.isNaN(questionId);
@@ -102,6 +115,7 @@ const Practice = () => {
       const res = await api.post('/submissions', {
         questionId,
         text,
+        typingStats: getSnapshot(),
       });
       const mappedRevisions = mapRevisions(res.data.submission.revisions);
       setRevisions(mappedRevisions);
@@ -117,6 +131,8 @@ const Practice = () => {
       if (mappedRevisions.length > 1) {
         setComparisonBase(mappedRevisions[1].text);
       }
+
+      resetTypingAnalytics();
     } catch (err) {
       console.error(err);
       setSaveError('Submission failed. Please try again.');
@@ -205,9 +221,18 @@ const Practice = () => {
             </div>
           </div>
         </div>
-        <div className="timer-card">
-          <Timer size={17} className={timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-primary'} />
-          <span className={`timer-text ${timeLeft < 60 ? 'text-red-500' : ''}`}>{formatTime(timeLeft)}</span>
+        <div className="practice-header-metrics">
+          <div className="timer-card">
+            <Timer size={17} className={timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-primary'} />
+            <span className={`timer-text ${timeLeft < 60 ? 'text-red-500' : ''}`}>{formatTime(timeLeft)}</span>
+          </div>
+          <div className="typing-stats-bar" aria-live="polite">
+            <span>{liveStats.netWpm} net WPM</span>
+            <span>{liveStats.wallClockWpm} wall WPM</span>
+            <span>{liveStats.activeSeconds}s active</span>
+            <span>{liveStats.pauseCount} pauses</span>
+            <span>{Math.round(liveStats.flowRatio * 100)}% flow</span>
+          </div>
         </div>
       </div>
 
@@ -268,6 +293,11 @@ const Practice = () => {
                         })}
                       </div>
                     </div>
+                    {rev.typingStats && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/15 text-primary">
+                        {Math.round(rev.typingStats.netWpm)} WPM
+                      </span>
+                    )}
                     {rev.score !== null && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-white">
                         {formatScore(rev.score)}/5
@@ -286,12 +316,30 @@ const Practice = () => {
               className="essay-textarea"
               placeholder="Start your TOEFL essay here..."
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                recordChange(e.target.value);
+              }}
+              onKeyDown={(e) => recordKeyDown(e.key)}
+              onPaste={() => recordPaste()}
             />
             <div className="word-count-badge">
               {text.trim() ? text.trim().split(/\s+/).length : 0} WORDS
             </div>
           </div>
+
+          <details
+            className="typing-heatmap-disclosure"
+            open={heatmapOpen}
+            onToggle={(e) => setHeatmapOpen(e.currentTarget.open)}
+          >
+            <summary className="typing-heatmap-summary">
+              <Keyboard size={16} />
+              Live keyboard heatmap
+              <ChevronDown size={16} className={heatmapOpen ? 'is-open' : ''} />
+            </summary>
+            <KeyboardHeatmap mode="live" data={liveStats.keyFrequency} />
+          </details>
 
           {(saveError || evalWarning) && (
             <div className="save-error">{saveError || evalWarning}</div>
@@ -307,6 +355,27 @@ const Practice = () => {
           </button>
 
           <div ref={reportRef} className="pt-4">
+            {currentReport?.typingStats && (
+              <div className="card mb-6 typing-session-card">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Keyboard size={20} className="text-primary" />
+                  Typing session
+                </h2>
+                <TypingStatsSummary stats={currentReport.typingStats} />
+                <WpmTimelineChart timeline={currentReport.typingStats.wpmTimeline} />
+                <KeyboardHeatmap
+                  mode="session"
+                  data={currentReport.typingStats.keyFrequency}
+                />
+              </div>
+            )}
+
+            {currentReport && !currentReport.typingStats && (
+              <div className="card mb-6 typing-session-card">
+                <p className="text-muted">No typing data for this version.</p>
+              </div>
+            )}
+
             {currentReport?.feedback && (
               <div className="animate-fade">
                 <div className="card" style={{ borderLeft: '4px solid var(--color-primary)' }}>
