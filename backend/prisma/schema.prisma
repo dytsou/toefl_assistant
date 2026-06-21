@@ -31,14 +31,39 @@ model Submission {
 }
 
 model SubmissionRevision {
-  id           Int        @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   submissionId Int
-  submission   Submission @relation(fields: [submissionId], references: [id])
+  submission   Submission  @relation(fields: [submissionId], references: [id])
   text         String
   score        Float?
   feedback     String?
-  errorLogs    ErrorLog[] // Moved here
-  createdAt    DateTime   @default(now())
+  errorLogs    ErrorLog[]
+  typingStats  TypingStats?
+  createdAt    DateTime    @default(now())
+}
+
+model TypingStats {
+  id              Int                @id @default(autoincrement())
+  revisionId      Int                @unique
+  revision        SubmissionRevision @relation(fields: [revisionId], references: [id])
+  netWpm          Float
+  rawWpm          Float
+  peakWpm         Float
+  wallClockWpm    Float
+  consistency     Float
+  flowRatio       Float
+  activeSeconds   Int
+  totalSeconds    Int
+  pauseCount      Int
+  burstCount      Int
+  keystrokeCount  Int
+  backspaceCount  Int
+  wordCount       Int
+  wpmTimeline     Json
+  pauses          Json
+  bursts          Json
+  keyFrequency    Json
+  createdAt       DateTime           @default(now())
 }
 
 model ErrorLog {
