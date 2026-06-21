@@ -1,4 +1,4 @@
-import type { TypingStatsPayload } from './types/typingStats';
+import type { TypingStatsPayload } from "./types/typingStats";
 
 export interface Question {
   id: number;
@@ -55,10 +55,11 @@ interface ApiTypingStats {
   keystrokeCount: number;
   backspaceCount: number;
   wordCount: number;
-  wpmTimeline: TypingStatsPayload['wpmTimeline'];
-  pauses: TypingStatsPayload['pauses'];
-  bursts: TypingStatsPayload['bursts'];
-  keyFrequency: TypingStatsPayload['keyFrequency'];
+  timerRemainingSeconds?: number | null;
+  wpmTimeline: TypingStatsPayload["wpmTimeline"];
+  pauses: TypingStatsPayload["pauses"];
+  bursts: TypingStatsPayload["bursts"];
+  keyFrequency: TypingStatsPayload["keyFrequency"];
 }
 
 interface ApiRevision {
@@ -71,7 +72,9 @@ interface ApiRevision {
   createdAt: string;
 }
 
-function mapTypingStats(stats: ApiTypingStats | null | undefined): TypingStatsPayload | null {
+function mapTypingStats(
+  stats: ApiTypingStats | null | undefined,
+): TypingStatsPayload | null {
   if (!stats) return null;
   return {
     netWpm: stats.netWpm,
@@ -87,6 +90,7 @@ function mapTypingStats(stats: ApiTypingStats | null | undefined): TypingStatsPa
     keystrokeCount: stats.keystrokeCount,
     backspaceCount: stats.backspaceCount,
     wordCount: stats.wordCount,
+    timerRemainingSeconds: stats.timerRemainingSeconds ?? null,
     wpmTimeline: stats.wpmTimeline ?? [],
     pauses: stats.pauses ?? [],
     bursts: stats.bursts ?? [],
@@ -132,10 +136,11 @@ export interface TypingStatsRow {
   keystrokeCount: number;
   backspaceCount: number;
   wordCount: number;
-  wpmTimeline: TypingStatsPayload['wpmTimeline'];
-  pauses: TypingStatsPayload['pauses'];
-  bursts: TypingStatsPayload['bursts'];
-  keyFrequency: TypingStatsPayload['keyFrequency'];
+  timerRemainingSeconds?: number | null;
+  wpmTimeline: TypingStatsPayload["wpmTimeline"];
+  pauses: TypingStatsPayload["pauses"];
+  bursts: TypingStatsPayload["bursts"];
+  keyFrequency: TypingStatsPayload["keyFrequency"];
   createdAt: string;
   revisionId: number;
   question: {

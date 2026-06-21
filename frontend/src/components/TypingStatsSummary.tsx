@@ -4,6 +4,13 @@ interface TypingStatsSummaryProps {
   stats: TypingStatsPayload;
 }
 
+function formatTimer(seconds: number | null | undefined) {
+  if (seconds === null || seconds === undefined) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 export function TypingStatsSummary({ stats }: TypingStatsSummaryProps) {
   return (
     <div className="typing-stats-summary">
@@ -32,6 +39,12 @@ export function TypingStatsSummary({ stats }: TypingStatsSummaryProps) {
           <span className="typing-stat-label">Active time</span>
           <span className="typing-stat-value">{stats.activeSeconds}s</span>
         </div>
+        {stats.timerRemainingSeconds != null && (
+          <div className="typing-stat-item">
+            <span className="typing-stat-label">Timer at submit</span>
+            <span className="typing-stat-value">{formatTimer(stats.timerRemainingSeconds)}</span>
+          </div>
+        )}
       </div>
 
       {(stats.pauses.length > 0 || stats.bursts.length > 0) && (

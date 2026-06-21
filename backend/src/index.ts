@@ -466,6 +466,7 @@ app.get("/api/typing-stats", async (_req, res) => {
         keystrokeCount: row.keystrokeCount,
         backspaceCount: row.backspaceCount,
         wordCount: row.wordCount,
+        timerRemainingSeconds: row.timerRemainingSeconds,
         wpmTimeline: row.wpmTimeline,
         pauses: row.pauses,
         bursts: row.bursts,
@@ -602,7 +603,9 @@ app.post("/api/speaking/questions", async (req, res) => {
       !ensureString(nextQuestion3) ||
       !ensureString(nextQuestion4)
     ) {
-      return res.status(400).json({ error: "Missing speaking question fields" });
+      return res
+        .status(400)
+        .json({ error: "Missing speaking question fields" });
     }
 
     const speakingQuestion = await prisma.speakingQuestion.create({

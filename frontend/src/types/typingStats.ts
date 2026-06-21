@@ -30,6 +30,7 @@ export interface TypingStatsPayload {
   keystrokeCount: number;
   backspaceCount: number;
   wordCount: number;
+  timerRemainingSeconds?: number | null;
   wpmTimeline: WpmTimelinePoint[];
   pauses: PauseSegment[];
   bursts: BurstSegment[];

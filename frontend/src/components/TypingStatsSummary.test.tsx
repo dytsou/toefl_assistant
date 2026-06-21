@@ -18,6 +18,7 @@ const sampleStats: TypingStatsPayload = {
   keystrokeCount: 500,
   backspaceCount: 20,
   wordCount: 120,
+  timerRemainingSeconds: 312,
   wpmTimeline: [{ t: 60, wpm: 30 }],
   pauses: [{ start: 30, end: 35, durationMs: 5000 }],
   bursts: [{ start: 0, end: 30, avgWpm: 34, wordCount: 20 }],
@@ -30,5 +31,6 @@ describe('TypingStatsSummary', () => {
     expect(screen.getByText('Peak WPM')).toBeInTheDocument();
     expect(screen.getByText('40')).toBeInTheDocument();
     expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(screen.getByText('5:12')).toBeInTheDocument();
   });
 });

@@ -459,6 +459,13 @@ nav.main-nav {
   line-height: 1;
 }
 
+.timer-paused-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+
 .practice-workspace {
   gap: 36px;
 }

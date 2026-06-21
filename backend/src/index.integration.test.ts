@@ -131,6 +131,7 @@ const sampleTypingStats = {
   keystrokeCount: 200,
   backspaceCount: 5,
   wordCount: 80,
+  timerRemainingSeconds: 300,
   wpmTimeline: [{ t: 60, wpm: 30 }],
   pauses: [{ start: 30, end: 35, durationMs: 5000 }],
   bursts: [{ start: 0, end: 30, avgWpm: 32, wordCount: 20 }],
@@ -146,7 +147,11 @@ describe("POST /api/submissions typing stats", () => {
     const res = await request(app)
       .post("/api/submissions")
       .set(authHeader)
-      .send({ questionId: question.id, text: "essay with stats", typingStats: sampleTypingStats });
+      .send({
+        questionId: question.id,
+        text: "essay with stats",
+        typingStats: sampleTypingStats,
+      });
 
     expect(res.status).toBe(200);
     const revision = res.body.submission.revisions[0];
@@ -176,7 +181,11 @@ describe("POST /api/submissions typing stats", () => {
     const res = await request(app)
       .post("/api/submissions")
       .set(authHeader)
-      .send({ questionId: question.id, text: "essay", typingStats: { netWpm: "bad" } });
+      .send({
+        questionId: question.id,
+        text: "essay",
+        typingStats: { netWpm: "bad" },
+      });
 
     expect(res.status).toBe(400);
   });
@@ -191,7 +200,11 @@ describe("GET /api/typing-stats", () => {
     await request(app)
       .post("/api/submissions")
       .set(authHeader)
-      .send({ questionId: question.id, text: "essay", typingStats: sampleTypingStats });
+      .send({
+        questionId: question.id,
+        text: "essay",
+        typingStats: sampleTypingStats,
+      });
 
     const res = await request(app).get("/api/typing-stats").set(authHeader);
 
@@ -217,7 +230,11 @@ describe("GET /api/questions/:id/latest-submission typing stats", () => {
     await request(app)
       .post("/api/submissions")
       .set(authHeader)
-      .send({ questionId: question.id, text: "essay", typingStats: sampleTypingStats });
+      .send({
+        questionId: question.id,
+        text: "essay",
+        typingStats: sampleTypingStats,
+      });
 
     const res = await request(app)
       .get(`/api/questions/${question.id}/latest-submission`)

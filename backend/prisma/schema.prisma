@@ -59,6 +59,7 @@ model TypingStats {
   keystrokeCount  Int
   backspaceCount  Int
   wordCount       Int
+  timerRemainingSeconds Int?
   wpmTimeline     Json
   pauses          Json
   bursts          Json

@@ -19,11 +19,13 @@ const Practice = () => {
   const [comparisonBase, setComparisonBase] = useState('');
   const [selectedRevision, setSelectedRevision] = useState<Revision | null>(null);
   const [timeLeft, setTimeLeft] = useState(420);
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [evalWarning, setEvalWarning] = useState('');
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const timerRef = useRef<number | null>(null);
+  const isTimerPausedRef = useRef(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const pendingToggles = useRef(new Set<number>());
   const [heatmapOpen, setHeatmapOpen] = useState(false);
@@ -78,6 +80,7 @@ const Practice = () => {
       });
 
     timerRef.current = window.setInterval(() => {
+      if (isTimerPausedRef.current) return;
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
@@ -103,8 +106,21 @@ const Practice = () => {
     return Number.isInteger(score) ? score.toString() : score.toFixed(1);
   };
 
+  const pauseTimer = () => {
+    isTimerPausedRef.current = true;
+    setIsTimerPaused(true);
+  };
+
+  const resumeTimer = () => {
+    isTimerPausedRef.current = false;
+    setIsTimerPaused(false);
+  };
+
   const handleSave = async () => {
     if (isEvaluating || Number.isNaN(questionId)) return;
+
+    const timerRemainingSeconds = timeLeft;
+    pauseTimer();
     setIsEvaluating(true);
     setSaveError('');
     setEvalWarning('');
@@ -115,7 +131,10 @@ const Practice = () => {
       const res = await api.post('/submissions', {
         questionId,
         text,
-        typingStats: getSnapshot(),
+        typingStats: {
+          ...getSnapshot(),
+          timerRemainingSeconds,
+        },
       });
       const mappedRevisions = mapRevisions(res.data.submission.revisions);
       setRevisions(mappedRevisions);
@@ -136,6 +155,7 @@ const Practice = () => {
     } catch (err) {
       console.error(err);
       setSaveError('Submission failed. Please try again.');
+      resumeTimer();
     } finally {
       setIsEvaluating(false);
     }
@@ -223,8 +243,11 @@ const Practice = () => {
         </div>
         <div className="practice-header-metrics">
           <div className="timer-card">
-            <Timer size={17} className={timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-primary'} />
-            <span className={`timer-text ${timeLeft < 60 ? 'text-red-500' : ''}`}>{formatTime(timeLeft)}</span>
+            <Timer size={17} className={timeLeft < 60 && !isTimerPaused ? 'text-red-500 animate-pulse' : 'text-primary'} />
+            <span className={`timer-text ${timeLeft < 60 && !isTimerPaused ? 'text-red-500' : ''}`}>
+              {formatTime(timeLeft)}
+            </span>
+            {isTimerPaused && <span className="timer-paused-label">PAUSED</span>}
           </div>
           <div className="typing-stats-bar" aria-live="polite">
             <span>{liveStats.netWpm} net WPM</span>
@@ -317,11 +340,18 @@ const Practice = () => {
               placeholder="Start your TOEFL essay here..."
               value={text}
               onChange={(e) => {
+                if (isTimerPaused) resumeTimer();
                 setText(e.target.value);
                 recordChange(e.target.value);
               }}
-              onKeyDown={(e) => recordKeyDown(e.key)}
-              onPaste={() => recordPaste()}
+              onKeyDown={(e) => {
+                if (isTimerPaused) resumeTimer();
+                recordKeyDown(e.key);
+              }}
+              onPaste={() => {
+                if (isTimerPaused) resumeTimer();
+                recordPaste();
+              }}
             />
             <div className="word-count-badge">
               {text.trim() ? text.trim().split(/\s+/).length : 0} WORDS
