@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star, Keyboard, ChevronDown } from 'lucide-react';
+import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star, Keyboard } from 'lucide-react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
 import { api } from '../api';
-import { KeyboardHeatmap } from '../components/KeyboardHeatmap';
 import { TypingStatsSummary } from '../components/TypingStatsSummary';
 import { WpmTimelineChart } from '../components/WpmTimelineChart';
 import { useTypingAnalytics } from '../hooks/useTypingAnalytics';
@@ -28,7 +27,6 @@ const Practice = () => {
   const isTimerPausedRef = useRef(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const pendingToggles = useRef(new Set<number>());
-  const [heatmapOpen, setHeatmapOpen] = useState(false);
   const {
     liveStats,
     recordKeyDown,
@@ -358,19 +356,6 @@ const Practice = () => {
             </div>
           </div>
 
-          <details
-            className="typing-heatmap-disclosure"
-            open={heatmapOpen}
-            onToggle={(e) => setHeatmapOpen(e.currentTarget.open)}
-          >
-            <summary className="typing-heatmap-summary">
-              <Keyboard size={16} />
-              Live keyboard heatmap
-              <ChevronDown size={16} className={heatmapOpen ? 'is-open' : ''} />
-            </summary>
-            <KeyboardHeatmap mode="live" data={liveStats.keyFrequency} />
-          </details>
-
           {(saveError || evalWarning) && (
             <div className="save-error">{saveError || evalWarning}</div>
           )}
@@ -393,10 +378,6 @@ const Practice = () => {
                 </h2>
                 <TypingStatsSummary stats={currentReport.typingStats} />
                 <WpmTimelineChart timeline={currentReport.typingStats.wpmTimeline} />
-                <KeyboardHeatmap
-                  mode="session"
-                  data={currentReport.typingStats.keyFrequency}
-                />
               </div>
             )}
 

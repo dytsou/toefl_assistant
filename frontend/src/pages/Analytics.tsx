@@ -17,8 +17,6 @@ import {
   YAxis,
 } from 'recharts';
 import { api } from '../api';
-import { KeyboardHeatmap } from '../components/KeyboardHeatmap';
-import { mergeKeyFrequency } from '../lib/keyFrequency';
 import type { TypingStatsRow } from '../types';
 
 const QUESTION_TYPES = ['All', 'Email', 'Academic'] as const;
@@ -46,11 +44,6 @@ const Analytics = () => {
     if (typeFilter === 'All') return rows;
     return rows.filter((row) => row.question.type === typeFilter);
   }, [rows, typeFilter]);
-
-  const aggregateKeyFrequency = useMemo(
-    () => mergeKeyFrequency(filteredRows.map((row) => row.keyFrequency)),
-    [filteredRows],
-  );
 
   const trendData = useMemo(
     () =>
@@ -101,7 +94,7 @@ const Analytics = () => {
             Typing Analytics
           </h1>
           <p className="text-muted">
-            Track WPM trends, flow ratio, and keyboard usage across practice sessions.
+            Track WPM trends and flow ratio across practice sessions.
           </p>
         </div>
         <div className="analytics-filters">
@@ -197,10 +190,6 @@ const Analytics = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          <div className="card">
-            <KeyboardHeatmap mode="aggregate" data={aggregateKeyFrequency} />
           </div>
         </>
       )}
