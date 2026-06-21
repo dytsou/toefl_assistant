@@ -16,6 +16,11 @@ vi.mock("./services/gemini.js", () => ({
     feedback: "Good work",
     errors: [],
   }),
+  evaluateSpeakingResponse: vi.fn(),
+  generateSpeakingQuestion: vi.fn(),
+  getGeminiModelConfig: vi.fn(),
+  resolveGeminiModel: vi.fn().mockReturnValue(undefined),
+  transcribeSpeakingAudio: vi.fn(),
 }));
 
 process.env.DATABASE_URL = `file:${testDbPath}`;
@@ -109,6 +114,117 @@ describe("POST /api/submissions upsert", () => {
     expect(res.status).toBe(200);
     expect(res.body.evaluationFailed).toBe(true);
     expect(res.body.submission).toBeDefined();
+  });
+});
+
+const sampleTypingStats = {
+  netWpm: 30,
+  rawWpm: 32,
+  peakWpm: 35,
+  wallClockWpm: 28,
+  consistency: 3,
+  flowRatio: 0.8,
+  activeSeconds: 120,
+  totalSeconds: 150,
+  pauseCount: 1,
+  burstCount: 2,
+  keystrokeCount: 200,
+  backspaceCount: 5,
+  wordCount: 80,
+  wpmTimeline: [{ t: 60, wpm: 30 }],
+  pauses: [{ start: 30, end: 35, durationMs: 5000 }],
+  bursts: [{ start: 0, end: 30, avgWpm: 32, wordCount: 20 }],
+  keyFrequency: { a: 10, Space: 5 },
+};
+
+describe("POST /api/submissions typing stats", () => {
+  it("persists typing stats when payload is valid", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Email", title: "Typing", content: "Prompt" },
+    });
+
+    const res = await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "essay with stats", typingStats: sampleTypingStats });
+
+    expect(res.status).toBe(200);
+    const revision = res.body.submission.revisions[0];
+    expect(revision.typingStats).toBeTruthy();
+    expect(revision.typingStats.netWpm).toBe(30);
+  });
+
+  it("creates revision without typing stats when omitted", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Email", title: "No stats", content: "Prompt" },
+    });
+
+    const res = await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "essay only" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.submission.revisions[0].typingStats).toBeNull();
+  });
+
+  it("rejects invalid typing stats payload", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Email", title: "Bad stats", content: "Prompt" },
+    });
+
+    const res = await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "essay", typingStats: { netWpm: "bad" } });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /api/typing-stats", () => {
+  it("returns rows with question metadata", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Academic", title: "Aggregate", content: "Prompt" },
+    });
+
+    await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "essay", typingStats: sampleTypingStats });
+
+    const res = await request(app).get("/api/typing-stats").set(authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0]).toMatchObject({
+      netWpm: 30,
+      question: {
+        title: "Aggregate",
+        type: "Academic",
+      },
+    });
+    expect(res.body[0].createdAt).toBeDefined();
+  });
+});
+
+describe("GET /api/questions/:id/latest-submission typing stats", () => {
+  it("includes typingStats on revisions", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Email", title: "Latest", content: "Prompt" },
+    });
+
+    await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "essay", typingStats: sampleTypingStats });
+
+    const res = await request(app)
+      .get(`/api/questions/${question.id}/latest-submission`)
+      .set(authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.revisions[0].typingStats.netWpm).toBe(30);
   });
 });
 

@@ -17,6 +17,10 @@ import {
 } from "./services/gemini.js";
 import { requireApiKey } from "./middleware/auth.js";
 import { normalizeErrorType } from "./lib/errorTypes.js";
+import {
+  parseTypingStatsPayload,
+  typingStatsCreateInput,
+} from "./lib/typingStatsValidation.js";
 
 dotenv.config();
 
@@ -54,7 +58,7 @@ const revisionInclude = {
   revisions: {
     // Contract: revisions are always returned newest-first for clients.
     orderBy: { createdAt: "desc" as const },
-    include: { errorLogs: true },
+    include: { errorLogs: true, typingStats: true },
   },
 } satisfies Prisma.SubmissionInclude;
 
@@ -346,7 +350,7 @@ app.get("/api/questions/:id/latest-submission", async (req, res) => {
 });
 
 app.post("/api/submissions", async (req, res) => {
-  const { questionId, text } = req.body;
+  const { questionId, text, typingStats: typingStatsBody } = req.body;
 
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Essay text is required" });
@@ -396,6 +400,18 @@ app.post("/api/submissions", async (req, res) => {
       };
     }
 
+    const parsedTypingStats = typingStatsBody
+      ? parseTypingStatsPayload(typingStatsBody)
+      : null;
+    if (typingStatsBody && !parsedTypingStats) {
+      return res.status(400).json({ error: "Invalid typing stats payload" });
+    }
+    if (parsedTypingStats) {
+      revisionData.typingStats = {
+        create: typingStatsCreateInput(parsedTypingStats),
+      };
+    }
+
     const submission = await prisma.submission.upsert({
       where: { questionId },
       create: {
@@ -416,6 +432,56 @@ app.post("/api/submissions", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to process submission" });
+  }
+});
+
+app.get("/api/typing-stats", async (_req, res) => {
+  try {
+    const rows = await prisma.typingStats.findMany({
+      include: {
+        revision: {
+          include: {
+            submission: {
+              include: { question: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(
+      rows.map((row) => ({
+        id: row.id,
+        netWpm: row.netWpm,
+        rawWpm: row.rawWpm,
+        peakWpm: row.peakWpm,
+        wallClockWpm: row.wallClockWpm,
+        consistency: row.consistency,
+        flowRatio: row.flowRatio,
+        activeSeconds: row.activeSeconds,
+        totalSeconds: row.totalSeconds,
+        pauseCount: row.pauseCount,
+        burstCount: row.burstCount,
+        keystrokeCount: row.keystrokeCount,
+        backspaceCount: row.backspaceCount,
+        wordCount: row.wordCount,
+        wpmTimeline: row.wpmTimeline,
+        pauses: row.pauses,
+        bursts: row.bursts,
+        keyFrequency: row.keyFrequency,
+        createdAt: row.createdAt,
+        revisionId: row.revisionId,
+        question: {
+          id: row.revision.submission.question.id,
+          type: row.revision.submission.question.type,
+          title: row.revision.submission.question.title,
+        },
+      })),
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch typing stats" });
   }
 });
 
