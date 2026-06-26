@@ -54,21 +54,28 @@ export function WritingFindBar({
 
   const goToMatch = (match: WritingSearchMatch) => {
     navigate(navigateToWritingMatch(match, query));
-    onClose();
+  };
+
+  const selectMatchAt = (index: number) => {
+    onActiveMatchChange(index);
+    const match = matches[index];
+    if (match) {
+      goToMatch(match);
+    }
   };
 
   const handlePrev = () => {
     if (matches.length === 0) return;
     const next =
       activeMatchIndex <= 0 ? matches.length - 1 : activeMatchIndex - 1;
-    onActiveMatchChange(next);
+    selectMatchAt(next);
   };
 
   const handleNext = () => {
     if (matches.length === 0) return;
     const next =
       activeMatchIndex >= matches.length - 1 ? 0 : activeMatchIndex + 1;
-    onActiveMatchChange(next);
+    selectMatchAt(next);
   };
 
   return (
@@ -148,7 +155,10 @@ export function WritingFindBar({
               ref={index === activeMatchIndex ? activeRowRef : undefined}
               type="button"
               className={`writing-find-result ${index === activeMatchIndex ? "is-active" : ""}`}
-              onClick={() => goToMatch(match)}
+              onClick={() => {
+                onActiveMatchChange(index);
+                goToMatch(match);
+              }}
             >
               <div className="writing-find-result-meta">
                 <strong>{match.questionTitle}</strong>
