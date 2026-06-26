@@ -305,6 +305,7 @@ const Practice = () => {
                     onClick={() => {
                       setSelectedRevision(rev);
                       setComparisonBase(rev.text);
+                      setRevisionHighlight(null);
                     }}
                   >
                     <div className="text-left">

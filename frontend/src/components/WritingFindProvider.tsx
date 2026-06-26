@@ -44,6 +44,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef<number | null>(null);
+  const searchRequestIdRef = useRef(0);
   const writingRoute = isWritingRoute(location.pathname);
 
   const openFind = useCallback(() => {
@@ -52,6 +53,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
   }, []);
 
   const closeFind = useCallback(() => {
+    searchRequestIdRef.current += 1;
     setOpen(false);
     setCompact(false);
     setQuery("");
@@ -96,10 +98,12 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
     }
 
     debounceRef.current = window.setTimeout(() => {
+      const requestId = ++searchRequestIdRef.current;
       setLoading(true);
       setError("");
       fetchWritingSearch(trimmed)
         .then((result) => {
+          if (requestId !== searchRequestIdRef.current) return;
           setMatches(result.matches);
           setTotal(result.total);
           setTruncated(result.truncated);
@@ -107,6 +111,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
           setCompact(false);
         })
         .catch((err) => {
+          if (requestId !== searchRequestIdRef.current) return;
           console.error(err);
           setError("Search failed. Check that the backend is running.");
           setMatches([]);
@@ -114,6 +119,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
           setTruncated(false);
         })
         .finally(() => {
+          if (requestId !== searchRequestIdRef.current) return;
           setLoading(false);
         });
     }, 250);
