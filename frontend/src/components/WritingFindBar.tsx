@@ -1,0 +1,173 @@
+import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { highlightSnippet } from "../lib/writingSearchSnippet";
+import { navigateToWritingMatch } from "../lib/navigateToWritingMatch";
+import type { WritingSearchMatch } from "../types/writingSearch";
+
+type WritingFindBarProps = {
+  open: boolean;
+  query: string;
+  matches: WritingSearchMatch[];
+  activeMatchIndex: number;
+  total: number;
+  truncated: boolean;
+  loading: boolean;
+  error: string;
+  onQueryChange: (value: string) => void;
+  onClose: () => void;
+  onActiveMatchChange: (index: number) => void;
+};
+
+export function WritingFindBar({
+  open,
+  query,
+  matches,
+  activeMatchIndex,
+  total,
+  truncated,
+  loading,
+  error,
+  onQueryChange,
+  onClose,
+  onActiveMatchChange,
+}: WritingFindBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const activeRowRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    activeRowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [activeMatchIndex, matches.length]);
+
+  if (!open) return null;
+
+  const matchCountLabel =
+    total > 0 ? `${activeMatchIndex + 1} of ${total}` : "0 of 0";
+
+  const goToMatch = (match: WritingSearchMatch) => {
+    navigate(navigateToWritingMatch(match, query));
+    onClose();
+  };
+
+  const handlePrev = () => {
+    if (matches.length === 0) return;
+    const next =
+      activeMatchIndex <= 0 ? matches.length - 1 : activeMatchIndex - 1;
+    onActiveMatchChange(next);
+  };
+
+  const handleNext = () => {
+    if (matches.length === 0) return;
+    const next =
+      activeMatchIndex >= matches.length - 1 ? 0 : activeMatchIndex + 1;
+    onActiveMatchChange(next);
+  };
+
+  return (
+    <div className="writing-find-bar" role="search">
+      <div className="writing-find-controls">
+        <Search size={16} className="writing-find-icon" aria-hidden />
+        <input
+          ref={inputRef}
+          className="writing-find-input"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              onClose();
+            }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleNext();
+            }
+          }}
+          placeholder="Find in your writing..."
+          aria-label="Find in your writing"
+        />
+        <span className="writing-find-count" aria-live="polite">
+          {matchCountLabel}
+        </span>
+        <div className="writing-find-actions">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={handlePrev}
+            disabled={matches.length === 0}
+            aria-label="Previous match"
+          >
+            <ChevronUp size={16} />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={handleNext}
+            disabled={matches.length === 0}
+            aria-label="Next match"
+          >
+            <ChevronDown size={16} />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onClose}
+            aria-label="Close find"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="writing-find-results" aria-live="polite">
+        {loading && <p className="writing-find-status">Searching...</p>}
+        {error && <p className="writing-find-error">{error}</p>}
+        {!loading && !error && query.trim().length < 2 && (
+          <p className="writing-find-status">Type at least 2 characters.</p>
+        )}
+        {!loading && !error && query.trim().length >= 2 && matches.length === 0 && (
+          <p className="writing-find-status">No matches found.</p>
+        )}
+        {truncated && (
+          <p className="writing-find-status">
+            Showing first {matches.length} of {total} matches.
+          </p>
+        )}
+        {matches.map((match, index) => {
+          const segments = highlightSnippet(match.snippet, query);
+          return (
+            <button
+              key={`${match.revisionId}-${match.startOffset}-${index}`}
+              ref={index === activeMatchIndex ? activeRowRef : undefined}
+              type="button"
+              className={`writing-find-result ${index === activeMatchIndex ? "is-active" : ""}`}
+              onClick={() => goToMatch(match)}
+            >
+              <div className="writing-find-result-meta">
+                <strong>{match.questionTitle}</strong>
+                <span>{match.questionType}</span>
+                <span>{match.revisionLabel}</span>
+              </div>
+              <p className="writing-find-result-snippet">
+                {segments.map((segment, segmentIndex) =>
+                  segment.highlighted ? (
+                    <mark key={segmentIndex}>{segment.text}</mark>
+                  ) : (
+                    <span key={segmentIndex}>{segment.text}</span>
+                  ),
+                )}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

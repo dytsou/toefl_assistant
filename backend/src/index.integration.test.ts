@@ -163,6 +163,48 @@ describe("DELETE /api/questions/:id cascade", () => {
   });
 });
 
+describe("GET /api/writing-search", () => {
+  it("returns 400 for invalid query", async () => {
+    const res = await request(app)
+      .get("/api/writing-search?q=a")
+      .set(authHeader);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns matches across questions", async () => {
+    const q1 = await prisma.question.create({
+      data: { type: "Email", title: "Essay A", content: "Prompt" },
+    });
+    const q2 = await prisma.question.create({
+      data: { type: "Academic", title: "Essay B", content: "Prompt" },
+    });
+
+    await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: q1.id, text: "The climate is warming quickly." });
+
+    await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: q2.id, text: "No relevant words here." });
+
+    const res = await request(app)
+      .get("/api/writing-search?q=climate")
+      .set(authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBeGreaterThanOrEqual(1);
+    expect(res.body.matches[0]).toMatchObject({
+      questionId: q1.id,
+      questionTitle: "Essay A",
+      revisionLabel: "LATEST",
+    });
+    expect(res.body.matches[0].snippet.toLowerCase()).toContain("climate");
+  });
+});
+
 describe("id param validation", () => {
   it.each([
     { method: "get" as const, path: "/api/questions/abc" },
