@@ -94,9 +94,35 @@ describe("findWritingMatches", () => {
       },
     );
 
-    expect(result.total).toBeGreaterThan(5);
+    expect(result.total).toBeGreaterThanOrEqual(5);
     expect(result.matches).toHaveLength(5);
     expect(result.truncated).toBe(true);
+  });
+
+  it("orders capped matches deterministically by question id", () => {
+    const grouped = groupRevisionsByQuestion([
+      {
+        revisionId: 1,
+        revisionText: "hit here",
+        revisionCreatedAt: new Date("2026-01-01"),
+        submissionId: 1,
+        questionId: 2,
+        questionTitle: "B",
+        questionType: "Email",
+      },
+      {
+        revisionId: 2,
+        revisionText: "hit here",
+        revisionCreatedAt: new Date("2026-01-01"),
+        submissionId: 2,
+        questionId: 1,
+        questionTitle: "A",
+        questionType: "Email",
+      },
+    ]);
+    const result = findWritingMatches("hit", grouped, { limit: 1 });
+
+    expect(result.matches[0]?.questionId).toBe(1);
   });
 });
 

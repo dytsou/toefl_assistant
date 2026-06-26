@@ -92,19 +92,25 @@ const Practice = () => {
   useEffect(() => {
     const deepLinkKey = searchParams.toString();
     const deepLink = parseWritingSearchDeepLink(deepLinkKey);
-    if (!deepLink || revisions.length === 0) return;
+    if (!deepLink) {
+      appliedDeepLinkRef.current = null;
+      return;
+    }
+    if (revisions.length === 0) return;
     if (appliedDeepLinkRef.current === deepLinkKey) return;
 
     const revision = revisions.find((rev) => rev.id === deepLink.revisionId);
-    if (!revision) return;
+    if (!revision) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
 
     appliedDeepLinkRef.current = deepLinkKey;
     const revisionIndex = revisions.findIndex((rev) => rev.id === deepLink.revisionId);
     const isLatest = revisionIndex === 0;
 
-    setSelectedRevision(revision);
-
     if (isLatest) {
+      setSelectedRevision(null);
       setRevisionHighlight(null);
       if (revisions.length > 1) {
         setComparisonBase(revisions[1].text);
@@ -117,6 +123,7 @@ const Practice = () => {
         textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     } else {
+      setSelectedRevision(revision);
       setComparisonBase(revision.text);
       setRevisionHighlight({
         text: revision.text,

@@ -16,6 +16,7 @@ vi.mock("./services/gemini.js", () => ({
     feedback: "Good work",
     errors: [],
   }),
+  resolveGeminiModel: vi.fn().mockReturnValue("gemini-2.0-flash"),
 }));
 
 process.env.DATABASE_URL = `file:${testDbPath}`;
@@ -164,12 +165,34 @@ describe("DELETE /api/questions/:id cascade", () => {
 });
 
 describe("GET /api/writing-search", () => {
+  it("returns 401 without auth", async () => {
+    const res = await request(app).get("/api/writing-search?q=ab");
+    expect(res.status).toBe(401);
+  });
+
   it("returns 400 for invalid query", async () => {
     const res = await request(app)
       .get("/api/writing-search?q=a")
       .set(authHeader);
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for query longer than 200 characters", async () => {
+    const res = await request(app)
+      .get(`/api/writing-search?q=${"x".repeat(201)}`)
+      .set(authHeader);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns empty results when no submissions match", async () => {
+    const res = await request(app)
+      .get("/api/writing-search?q=zzzz")
+      .set(authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ matches: [], total: 0, truncated: false });
   });
 
   it("returns matches across questions", async () => {
@@ -202,6 +225,26 @@ describe("GET /api/writing-search", () => {
       revisionLabel: "LATEST",
     });
     expect(res.body.matches[0].snippet.toLowerCase()).toContain("climate");
+  });
+
+  it("truncates at 200 matches", async () => {
+    const question = await prisma.question.create({
+      data: { type: "Email", title: "Long essay", content: "Prompt" },
+    });
+
+    await request(app)
+      .post("/api/submissions")
+      .set(authHeader)
+      .send({ questionId: question.id, text: "aa ".repeat(250) });
+
+    const res = await request(app)
+      .get("/api/writing-search?q=aa")
+      .set(authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.matches).toHaveLength(200);
+    expect(res.body.truncated).toBe(true);
+    expect(res.body.total).toBeGreaterThanOrEqual(200);
   });
 });
 
