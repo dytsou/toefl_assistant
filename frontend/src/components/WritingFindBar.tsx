@@ -7,6 +7,7 @@ import type { WritingSearchMatch } from "../types/writingSearch";
 
 type WritingFindBarProps = {
   open: boolean;
+  compact: boolean;
   query: string;
   matches: WritingSearchMatch[];
   activeMatchIndex: number;
@@ -17,10 +18,12 @@ type WritingFindBarProps = {
   onQueryChange: (value: string) => void;
   onClose: () => void;
   onActiveMatchChange: (index: number) => void;
+  onNavigateToMatch: () => void;
 };
 
 export function WritingFindBar({
   open,
+  compact,
   query,
   matches,
   activeMatchIndex,
@@ -31,6 +34,7 @@ export function WritingFindBar({
   onQueryChange,
   onClose,
   onActiveMatchChange,
+  onNavigateToMatch,
 }: WritingFindBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -44,8 +48,10 @@ export function WritingFindBar({
   }, [open]);
 
   useEffect(() => {
-    activeRowRef.current?.scrollIntoView({ block: "nearest" });
-  }, [activeMatchIndex, matches.length]);
+    if (!compact) {
+      activeRowRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeMatchIndex, matches.length, compact]);
 
   if (!open) return null;
 
@@ -54,6 +60,7 @@ export function WritingFindBar({
 
   const goToMatch = (match: WritingSearchMatch) => {
     navigate(navigateToWritingMatch(match, query));
+    onNavigateToMatch();
   };
 
   const selectMatchAt = (index: number) => {
@@ -79,7 +86,10 @@ export function WritingFindBar({
   };
 
   return (
-    <div className="writing-find-bar" role="search">
+    <div
+      className={`writing-find-bar${compact ? " is-compact" : ""}`}
+      role="search"
+    >
       <div className="writing-find-controls">
         <Search size={16} className="writing-find-icon" aria-hidden />
         <input
@@ -133,6 +143,7 @@ export function WritingFindBar({
         </div>
       </div>
 
+      {!compact && (
       <div className="writing-find-results" aria-live="polite">
         {loading && <p className="writing-find-status">Searching...</p>}
         {error && <p className="writing-find-error">{error}</p>}
@@ -178,6 +189,7 @@ export function WritingFindBar({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

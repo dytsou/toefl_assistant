@@ -40,17 +40,20 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
   const [total, setTotal] = useState(0);
   const [truncated, setTruncated] = useState(false);
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+  const [compact, setCompact] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const debounceRef = useRef<number | null>(null);
   const writingRoute = isWritingRoute(location.pathname);
 
   const openFind = useCallback(() => {
+    setCompact(false);
     setOpen(true);
   }, []);
 
   const closeFind = useCallback(() => {
     setOpen(false);
+    setCompact(false);
     setQuery("");
     setMatches([]);
     setTotal(0);
@@ -65,6 +68,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
         event.preventDefault();
+        setCompact(false);
         setOpen(true);
       }
     };
@@ -128,6 +132,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
       {writingRoute && (
         <WritingFindBar
           open={open}
+          compact={compact}
           query={query}
           matches={matches}
           activeMatchIndex={activeMatchIndex}
@@ -135,9 +140,13 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
           truncated={truncated}
           loading={loading}
           error={error}
-          onQueryChange={setQuery}
+          onQueryChange={(value) => {
+            setQuery(value);
+            setCompact(false);
+          }}
           onClose={closeFind}
           onActiveMatchChange={setActiveMatchIndex}
+          onNavigateToMatch={() => setCompact(true)}
         />
       )}
     </WritingFindContext.Provider>

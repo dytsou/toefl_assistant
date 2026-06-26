@@ -2129,6 +2129,36 @@ nav.main-nav {
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
 }
 
+.writing-find-bar.is-compact {
+  top: 76px;
+  right: 20px;
+  left: auto;
+  transform: none;
+  width: min(360px, calc(100vw - 32px));
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+}
+
+.writing-find-bar.is-compact .writing-find-controls {
+  border-bottom: none;
+  padding: 6px 8px;
+  gap: 6px;
+}
+
+.writing-find-bar.is-compact .writing-find-input {
+  font-size: 0.875rem;
+}
+
+.writing-find-bar.is-compact .writing-find-count {
+  min-width: 3.5rem;
+  font-size: 0.7rem;
+}
+
+.writing-find-bar.is-compact .icon-button {
+  width: 30px;
+  height: 30px;
+}
+
 .writing-find-bar button {
   font-weight: 400;
 }
