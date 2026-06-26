@@ -148,6 +148,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
           onClose={closeFind}
           onActiveMatchChange={setActiveMatchIndex}
           onNavigateToMatch={() => setCompact(true)}
+          onExpandResults={() => setCompact(false)}
         />
       )}
     </WritingFindContext.Provider>

@@ -19,6 +19,7 @@ type WritingFindBarProps = {
   onClose: () => void;
   onActiveMatchChange: (index: number) => void;
   onNavigateToMatch: () => void;
+  onExpandResults: () => void;
 };
 
 export function WritingFindBar({
@@ -35,6 +36,7 @@ export function WritingFindBar({
   onClose,
   onActiveMatchChange,
   onNavigateToMatch,
+  onExpandResults,
 }: WritingFindBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -98,6 +100,7 @@ export function WritingFindBar({
           className="writing-find-input"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
+          onFocus={onExpandResults}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.preventDefault();
