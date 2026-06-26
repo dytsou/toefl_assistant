@@ -104,6 +104,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
           setTotal(result.total);
           setTruncated(result.truncated);
           setActiveMatchIndex(0);
+          setCompact(false);
         })
         .catch((err) => {
           console.error(err);

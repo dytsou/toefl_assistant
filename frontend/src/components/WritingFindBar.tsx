@@ -55,8 +55,9 @@ export function WritingFindBar({
 
   if (!open) return null;
 
+  const totalLabel = truncated ? `${total}+` : String(total);
   const matchCountLabel =
-    total > 0 ? `${activeMatchIndex + 1} of ${total}` : "0 of 0";
+    total > 0 ? `${activeMatchIndex + 1} of ${totalLabel}` : "0 of 0";
 
   const goToMatch = (match: WritingSearchMatch) => {
     navigate(navigateToWritingMatch(match, query));
@@ -144,51 +145,54 @@ export function WritingFindBar({
       </div>
 
       {!compact && (
-      <div className="writing-find-results" aria-live="polite">
-        {loading && <p className="writing-find-status">Searching...</p>}
-        {error && <p className="writing-find-error">{error}</p>}
-        {!loading && !error && query.trim().length < 2 && (
-          <p className="writing-find-status">Type at least 2 characters.</p>
-        )}
-        {!loading && !error && query.trim().length >= 2 && matches.length === 0 && (
-          <p className="writing-find-status">No matches found.</p>
-        )}
-        {truncated && (
-          <p className="writing-find-status">
-            Showing first {matches.length} of {total} matches.
-          </p>
-        )}
-        {matches.map((match, index) => {
-          const segments = highlightSnippet(match.snippet, query);
-          return (
-            <button
-              key={`${match.revisionId}-${match.startOffset}-${index}`}
-              ref={index === activeMatchIndex ? activeRowRef : undefined}
-              type="button"
-              className={`writing-find-result ${index === activeMatchIndex ? "is-active" : ""}`}
-              onClick={() => {
-                onActiveMatchChange(index);
-                goToMatch(match);
-              }}
-            >
-              <div className="writing-find-result-meta">
-                <strong>{match.questionTitle}</strong>
-                <span>{match.questionType}</span>
-                <span>{match.revisionLabel}</span>
-              </div>
-              <p className="writing-find-result-snippet">
-                {segments.map((segment, segmentIndex) =>
-                  segment.highlighted ? (
-                    <mark key={segmentIndex}>{segment.text}</mark>
-                  ) : (
-                    <span key={segmentIndex}>{segment.text}</span>
-                  ),
-                )}
-              </p>
-            </button>
-          );
-        })}
-      </div>
+        <div className="writing-find-results" aria-live="polite">
+          {loading && <p className="writing-find-status">Searching...</p>}
+          {error && <p className="writing-find-error">{error}</p>}
+          {!loading && !error && query.trim().length < 2 && (
+            <p className="writing-find-status">Type at least 2 characters.</p>
+          )}
+          {!loading &&
+            !error &&
+            query.trim().length >= 2 &&
+            matches.length === 0 && (
+              <p className="writing-find-status">No matches found.</p>
+            )}
+          {truncated && (
+            <p className="writing-find-status">
+              Showing first {matches.length} of {total} matches.
+            </p>
+          )}
+          {matches.map((match, index) => {
+            const segments = highlightSnippet(match.snippet, query);
+            return (
+              <button
+                key={`${match.revisionId}-${match.startOffset}-${index}`}
+                ref={index === activeMatchIndex ? activeRowRef : undefined}
+                type="button"
+                className={`writing-find-result ${index === activeMatchIndex ? "is-active" : ""}`}
+                onClick={() => {
+                  onActiveMatchChange(index);
+                  goToMatch(match);
+                }}
+              >
+                <div className="writing-find-result-meta">
+                  <strong>{match.questionTitle}</strong>
+                  <span>{match.questionType}</span>
+                  <span>{match.revisionLabel}</span>
+                </div>
+                <p className="writing-find-result-snippet">
+                  {segments.map((segment, segmentIndex) =>
+                    segment.highlighted ? (
+                      <mark key={segmentIndex}>{segment.text}</mark>
+                    ) : (
+                      <span key={segmentIndex}>{segment.text}</span>
+                    ),
+                  )}
+                </p>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
