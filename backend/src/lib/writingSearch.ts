@@ -55,7 +55,9 @@ export function groupRevisionsByQuestion(
 
   const grouped: RevisionSearchRow[] = [];
 
-  for (const questionRows of byQuestion.values()) {
+  const questionIds = [...byQuestion.keys()].sort((a, b) => a - b);
+  for (const questionId of questionIds) {
+    const questionRows = byQuestion.get(questionId)!;
     const sorted = [...questionRows].sort(
       (a, b) => b.revisionCreatedAt.getTime() - a.revisionCreatedAt.getTime(),
     );
@@ -115,6 +117,14 @@ export function findWritingMatches(
           endOffset,
           snippet: buildSnippet(haystack, startOffset, endOffset),
         });
+      }
+
+      if (matches.length >= limit) {
+        return {
+          matches,
+          total: Math.max(total, limit),
+          truncated: true,
+        };
       }
 
       searchFrom = foundAt + 1;

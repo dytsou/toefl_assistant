@@ -435,13 +435,24 @@ app.get("/api/writing-search", async (req, res) => {
 
   try {
     const revisions = await prisma.submissionRevision.findMany({
-      include: {
+      select: {
+        id: true,
+        text: true,
+        createdAt: true,
+        submissionId: true,
         submission: {
-          include: {
-            question: true,
+          select: {
+            questionId: true,
+            question: {
+              select: {
+                title: true,
+                type: true,
+              },
+            },
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     const rows = groupRevisionsByQuestion(
