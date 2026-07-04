@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star, Keyboard } from 'lucide-react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
+import { WritingSearchHighlight } from '../components/WritingSearchHighlight';
+import { parseWritingSearchDeepLink } from '../hooks/useWritingSearchDeepLink';
 import { api } from '../api';
 import { TypingStatsSummary } from '../components/TypingStatsSummary';
 import { WpmTimelineChart } from '../components/WpmTimelineChart';
@@ -11,6 +13,7 @@ import { mapRevisions, type ErrorLog, type Question, type Revision } from '../ty
 
 const Practice = () => {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const questionId = id ? parseInt(id, 10) : Number.NaN;
   const [question, setQuestion] = useState<Question | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -23,9 +26,15 @@ const Practice = () => {
   const [saveError, setSaveError] = useState('');
   const [evalWarning, setEvalWarning] = useState('');
   const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [revisionHighlight, setRevisionHighlight] = useState<{
+    text: string;
+    start: number;
+    end: number;
+  } | null>(null);
   const timerRef = useRef<number | null>(null);
   const isTimerPausedRef = useRef(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingToggles = useRef(new Set<number>());
   const {
     liveStats,
@@ -35,6 +44,7 @@ const Practice = () => {
     getSnapshot,
     reset: resetTypingAnalytics,
   } = useTypingAnalytics();
+  const appliedDeepLinkRef = useRef<string | null>(null);
 
   const currentReport = selectedRevision ?? revisions[0];
   const invalidLink = !id || Number.isNaN(questionId);
@@ -92,6 +102,65 @@ const Practice = () => {
     if (!currentReport?.id) return;
     reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [currentReport?.id]);
+
+  useEffect(() => {
+    const deepLinkKey = searchParams.toString();
+    const deepLink = parseWritingSearchDeepLink(deepLinkKey);
+    if (!deepLink) {
+      appliedDeepLinkRef.current = null;
+      return;
+    }
+    if (revisions.length === 0) return;
+    if (appliedDeepLinkRef.current === deepLinkKey) return;
+
+    const revision = revisions.find((rev) => rev.id === deepLink.revisionId);
+    if (!revision) {
+      const clearParamsFrame = window.requestAnimationFrame(() => {
+        setSearchParams({}, { replace: true });
+      });
+      return () => window.cancelAnimationFrame(clearParamsFrame);
+    }
+
+    const applyDeepLinkFrame = window.requestAnimationFrame(() => {
+      appliedDeepLinkRef.current = deepLinkKey;
+      const revisionIndex = revisions.findIndex((rev) => rev.id === deepLink.revisionId);
+      const isLatest = revisionIndex === 0;
+
+      if (isLatest) {
+        setSelectedRevision(null);
+        setRevisionHighlight(null);
+        if (revisions.length > 1) {
+          setComparisonBase(revisions[1].text);
+        }
+        window.requestAnimationFrame(() => {
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+          textarea.focus();
+          textarea.setSelectionRange(deepLink.start, deepLink.end);
+          textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } else {
+        setSelectedRevision(revision);
+        setComparisonBase(revision.text);
+        setRevisionHighlight({
+          text: revision.text,
+          start: deepLink.start,
+          end: deepLink.end,
+        });
+        window.requestAnimationFrame(() => {
+          document
+            .querySelector('[data-testid="writing-search-highlight"]')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+
+      setSearchParams({}, { replace: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(applyDeepLinkFrame);
+    };
+  }, [revisions, searchParams, setSearchParams]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -297,6 +366,7 @@ const Practice = () => {
                     onClick={() => {
                       setSelectedRevision(rev);
                       setComparisonBase(rev.text);
+                      setRevisionHighlight(null);
                     }}
                   >
                     <div className="text-left">
@@ -332,8 +402,16 @@ const Practice = () => {
         </div>
 
         <div className="lg-span-8 practice-editor-stack">
+          {revisionHighlight && (
+            <WritingSearchHighlight
+              text={revisionHighlight.text}
+              start={revisionHighlight.start}
+              end={revisionHighlight.end}
+            />
+          )}
           <div className="essay-editor-shell">
             <textarea
+              ref={textareaRef}
               className="essay-textarea"
               placeholder="Start your TOEFL essay here..."
               value={text}

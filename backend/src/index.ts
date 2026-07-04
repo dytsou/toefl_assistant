@@ -21,6 +21,11 @@ import {
   parseTypingStatsPayload,
   typingStatsCreateInput,
 } from "./lib/typingStatsValidation.js";
+import {
+  findWritingMatches,
+  groupRevisionsByQuestion,
+  validateWritingSearchQuery,
+} from "./lib/writingSearch.js";
 
 dotenv.config();
 
@@ -483,6 +488,56 @@ app.get("/api/typing-stats", async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch typing stats" });
+  }
+});
+
+app.get("/api/writing-search", async (req, res) => {
+  const query = validateWritingSearchQuery(
+    typeof req.query.q === "string" ? req.query.q : undefined,
+  );
+
+  if (!query) {
+    return res.status(400).json({ error: "Invalid search query" });
+  }
+
+  try {
+    const revisions = await prisma.submissionRevision.findMany({
+      select: {
+        id: true,
+        text: true,
+        createdAt: true,
+        submissionId: true,
+        submission: {
+          select: {
+            questionId: true,
+            question: {
+              select: {
+                title: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const rows = groupRevisionsByQuestion(
+      revisions.map((revision) => ({
+        revisionId: revision.id,
+        revisionText: revision.text,
+        revisionCreatedAt: revision.createdAt,
+        submissionId: revision.submissionId,
+        questionId: revision.submission.questionId,
+        questionTitle: revision.submission.question.title,
+        questionType: revision.submission.question.type,
+      })),
+    );
+
+    res.json(findWritingMatches(query, rows));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to search writing" });
   }
 });
 

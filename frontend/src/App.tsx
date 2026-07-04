@@ -24,6 +24,7 @@ import {
   PanelTopOpen,
 } from "lucide-react";
 import { api, getGeminiModel, setGeminiModel, type GeminiModelConfig } from "./api";
+import { WritingFindProvider } from "./components/WritingFindProvider";
 
 function PracticeRoute() {
   const { id } = useParams();
@@ -74,6 +75,7 @@ function App() {
 
   return (
     <Router>
+      <WritingFindProvider>
       <div className="app-wrapper">
         <nav className="main-nav">
           <div className="nav-content nav-content-row">
@@ -174,6 +176,7 @@ function App() {
           </Routes>
         </main>
       </div>
+      </WritingFindProvider>
     </Router>
   );
 }
