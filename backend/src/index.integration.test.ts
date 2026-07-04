@@ -38,7 +38,7 @@ beforeAll(async () => {
     fs.unlinkSync(testDbPath);
   }
 
-  execSync("npx prisma db push --skip-generate", {
+  execSync("pnpm exec prisma db push --skip-generate", {
     cwd: path.join(backendRoot, ".."),
     stdio: "pipe",
   });

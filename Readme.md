@@ -53,8 +53,8 @@ writing_assistant/
 ```
 
 ## 環境需求
-- Node.js (建議 v18 以上)
-- npm
+- Node.js (建議 v20.19 以上)
+- pnpm 11+
 - Google Gemini API Key (可至 [Google AI Studio](https://aistudio.google.com/apikey) 申請)
 
 ## 快速開始
@@ -68,7 +68,7 @@ cp .env.example .env
 ```
 使用工具產生 API 通行證：
 ```bash
-npm run gen-api-key -- --write
+pnpm generate-api-key -- --write
 ```
 *這會自動在 `.env` 中填入 `API_KEY`。  
 記得手動填入你的 `GEMINI_API_KEY`。*
@@ -112,30 +112,25 @@ VITE_API_URL="http://localhost:3001/api"
 
 安裝依賴：
 ```bash
-# 後端
-cd backend && npm install
-# 前端
-cd frontend && npm install
+pnpm install
 ```
 
 初始化資料庫：
 ```bash
-cd backend
-npx prisma generate
-npx prisma db push
+pnpm prisma:generate
+pnpm prisma:push
 ```
 
 如果要載入 seed data：
 
 ```bash
-npx tsx prisma/seed.ts
+pnpm seed
 ```
 
-啟動 backend：
+同時啟動 frontend 與 backend：
 
 ```bash
-cd backend
-npm run dev
+pnpm dev
 ```
 
 預設 API server：
@@ -143,11 +138,12 @@ npm run dev
 ```text
 http://localhost:3001
 ```
-啟動 frontend：
+
+若只想單獨啟動其中一邊：
 
 ```bash
-cd frontend
-npm run dev
+pnpm dev:backend
+pnpm dev:frontend
 ```
 
 Vite 會顯示可用的本機網址，通常是：
@@ -158,27 +154,27 @@ http://localhost:5173
 
 ## 常用指令
 
-Frontend：
+Root workspace：
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run preview
+pnpm dev
+pnpm test
+pnpm build
+pnpm lint
 ```
 
 Backend：
 
 ```bash
-npm run dev
-npx prisma generate
-npx prisma db push
-npx prisma studio
+pnpm dev:backend
+pnpm prisma:generate
+pnpm prisma:push
+pnpm prisma:studio
 ```
 
-- `npm run gen-api-key`: 產生前後端通訊金鑰。
-- `npm test`: 執行 Vitest 測試（後端含 Gemini 邏輯測試）。
-- `npx prisma studio`: 可視化管理資料庫內容。
+- `pnpm generate-api-key`: 產生前後端通訊金鑰。
+- `pnpm test`: 執行 Vitest 測試（後端含 Gemini 邏輯測試）。
+- `pnpm prisma:studio`: 可視化管理資料庫內容。
 
 
 ## 評分標準與錯誤分類

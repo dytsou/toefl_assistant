@@ -1,0 +1,18 @@
+{
+  "name": "toefl-writing-assistant",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter backend --filter frontend run dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "test": "pnpm -r test",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "generate-api-key": "pnpm --filter backend generate-api-key",
+    "prisma:generate": "pnpm --filter backend exec prisma generate",
+    "prisma:push": "pnpm --filter backend exec prisma db push",
+    "prisma:studio": "pnpm --filter backend exec prisma studio",
+    "seed": "pnpm --filter backend exec tsx prisma/seed.ts"
+  }
+}

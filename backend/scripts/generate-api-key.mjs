@@ -46,5 +46,5 @@ if (write) {
   console.log(`  ${frontendEnv}`);
 } else {
   console.log("\nTo write both .env files automatically, run:");
-  console.log("  npm run generate-api-key -- --write");
+  console.log("  pnpm generate-api-key -- --write");
 }
