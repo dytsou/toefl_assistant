@@ -10,12 +10,17 @@ import {
 } from "react";
 import { useLocation } from "react-router-dom";
 import { fetchWritingSearch } from "../api/writingSearch";
+import {
+  syncEditorFindHighlight,
+  type EditorFindRegistration,
+} from "../lib/editorFindSync";
 import { isWritingRoute } from "../lib/navigateToWritingMatch";
 import type { WritingSearchMatch } from "../types/writingSearch";
 import { WritingFindBar } from "./WritingFindBar";
 
 type WritingFindContextValue = {
   openFind: () => void;
+  registerEditorFind: (registration: EditorFindRegistration | null) => void;
 };
 
 const WritingFindContext = createContext<WritingFindContextValue | null>(null);
@@ -45,7 +50,37 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
   const [error, setError] = useState("");
   const debounceRef = useRef<number | null>(null);
   const searchRequestIdRef = useRef(0);
+  const editorRegistrationRef = useRef<EditorFindRegistration | null>(null);
+  const revealActiveMatchRef = useRef(false);
   const writingRoute = isWritingRoute(location.pathname);
+
+  const syncEditorHighlight = useCallback(() => {
+    syncEditorFindHighlight({
+      open,
+      query,
+      matches,
+      activeMatchIndex,
+      registration: editorRegistrationRef.current,
+      revealActiveMatch: revealActiveMatchRef.current,
+    });
+    revealActiveMatchRef.current = false;
+  }, [open, query, matches, activeMatchIndex]);
+
+  const registerEditorFind = useCallback(
+    (registration: EditorFindRegistration | null) => {
+      editorRegistrationRef.current = registration;
+      syncEditorFindHighlight({
+        open,
+        query,
+        matches,
+        activeMatchIndex,
+        registration,
+        revealActiveMatch: revealActiveMatchRef.current,
+      });
+      revealActiveMatchRef.current = false;
+    },
+    [open, query, matches, activeMatchIndex],
+  );
 
   const openFind = useCallback(() => {
     setCompact(false);
@@ -62,6 +97,7 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
     setTruncated(false);
     setActiveMatchIndex(0);
     setError("");
+    editorRegistrationRef.current?.setHighlight(null);
   }, []);
 
   useEffect(() => {
@@ -78,6 +114,10 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [writingRoute]);
+
+  useEffect(() => {
+    syncEditorHighlight();
+  }, [syncEditorHighlight]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,7 +171,10 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
     };
   }, [open, query]);
 
-  const contextValue = useMemo(() => ({ openFind }), [openFind]);
+  const contextValue = useMemo(
+    () => ({ openFind, registerEditorFind }),
+    [openFind, registerEditorFind],
+  );
 
   return (
     <WritingFindContext.Provider value={contextValue}>
@@ -152,7 +195,10 @@ export function WritingFindProvider({ children }: WritingFindProviderProps) {
             setCompact(false);
           }}
           onClose={closeFind}
-          onActiveMatchChange={setActiveMatchIndex}
+          onActiveMatchChange={(index) => {
+            revealActiveMatchRef.current = true;
+            setActiveMatchIndex(index);
+          }}
           onNavigateToMatch={() => setCompact(true)}
           onExpandResults={() => setCompact(false)}
         />

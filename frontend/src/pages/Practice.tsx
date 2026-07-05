@@ -3,8 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Timer, ChevronRight, AlertTriangle, History, CheckCircle2, Loader2, Sparkles, BookOpen, Star, Keyboard } from 'lucide-react';
 import ReactDiffViewer from 'react-diff-viewer-continued';
+import { EssayFindHighlightLayer } from '../components/EssayFindHighlightLayer';
 import { WritingSearchHighlight } from '../components/WritingSearchHighlight';
+import { useWritingFind } from '../components/WritingFindProvider';
 import { parseWritingSearchDeepLink } from '../hooks/useWritingSearchDeepLink';
+import { scrollTextareaToRange } from '../lib/scrollTextareaToRange';
+import { resolveEditorFindRange } from '../lib/writingTextHighlight';
 import { api } from '../api';
 import { TypingStatsSummary } from '../components/TypingStatsSummary';
 import { WpmTimelineChart } from '../components/WpmTimelineChart';
@@ -28,8 +32,15 @@ const Practice = () => {
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [revisionHighlight, setRevisionHighlight] = useState<{
     text: string;
-    start: number;
-    end: number;
+    query: string;
+    activeStart: number;
+    activeEnd: number;
+  } | null>(null);
+  const [editorFindHighlight, setEditorFindHighlight] = useState<{
+    query: string;
+    activeStart: number;
+    activeEnd: number;
+    revealActiveMatch?: boolean;
   } | null>(null);
   const timerRef = useRef<number | null>(null);
   const isTimerPausedRef = useRef(false);
@@ -45,6 +56,14 @@ const Practice = () => {
     reset: resetTypingAnalytics,
   } = useTypingAnalytics();
   const appliedDeepLinkRef = useRef<string | null>(null);
+  const textRef = useRef(text);
+  const latestRevisionIdRef = useRef<number | null>(null);
+  const selectedRevisionRef = useRef(selectedRevision);
+  const { registerEditorFind } = useWritingFind();
+
+  textRef.current = text;
+  latestRevisionIdRef.current = revisions[0]?.id ?? null;
+  selectedRevisionRef.current = selectedRevision;
 
   const currentReport = selectedRevision ?? revisions[0];
   const invalidLink = !id || Number.isNaN(questionId);
@@ -104,6 +123,20 @@ const Practice = () => {
   }, [currentReport?.id]);
 
   useEffect(() => {
+    if (Number.isNaN(questionId)) return;
+
+    registerEditorFind({
+      questionId,
+      getText: () => textRef.current,
+      getLatestRevisionId: () => latestRevisionIdRef.current,
+      canHighlight: () => selectedRevisionRef.current === null,
+      setHighlight: setEditorFindHighlight,
+    });
+
+    return () => registerEditorFind(null);
+  }, [questionId, registerEditorFind]);
+
+  useEffect(() => {
     const deepLinkKey = searchParams.toString();
     const deepLink = parseWritingSearchDeepLink(deepLinkKey);
     if (!deepLink) {
@@ -129,28 +162,37 @@ const Practice = () => {
       if (isLatest) {
         setSelectedRevision(null);
         setRevisionHighlight(null);
+        const resolved = resolveEditorFindRange(
+          textRef.current,
+          deepLink.q,
+          deepLink.start,
+          deepLink.end,
+        );
+        if (resolved) {
+          setEditorFindHighlight({
+            query: deepLink.q,
+            activeStart: resolved.start,
+            activeEnd: resolved.end,
+          });
+        }
         if (revisions.length > 1) {
           setComparisonBase(revisions[1].text);
         }
         window.requestAnimationFrame(() => {
           const textarea = textareaRef.current;
           if (!textarea) return;
-          textarea.focus();
-          textarea.setSelectionRange(deepLink.start, deepLink.end);
-          textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          scrollTextareaToRange(textarea, deepLink.start, deepLink.end);
+          textarea.focus({ preventScroll: true });
         });
       } else {
         setSelectedRevision(revision);
+        setEditorFindHighlight(null);
         setComparisonBase(revision.text);
         setRevisionHighlight({
           text: revision.text,
-          start: deepLink.start,
-          end: deepLink.end,
-        });
-        window.requestAnimationFrame(() => {
-          document
-            .querySelector('[data-testid="writing-search-highlight"]')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          query: deepLink.q,
+          activeStart: deepLink.start,
+          activeEnd: deepLink.end,
         });
       }
 
@@ -367,6 +409,7 @@ const Practice = () => {
                       setSelectedRevision(rev);
                       setComparisonBase(rev.text);
                       setRevisionHighlight(null);
+                      setEditorFindHighlight(null);
                     }}
                   >
                     <div className="text-left">
@@ -405,21 +448,34 @@ const Practice = () => {
           {revisionHighlight && (
             <WritingSearchHighlight
               text={revisionHighlight.text}
-              start={revisionHighlight.start}
-              end={revisionHighlight.end}
+              query={revisionHighlight.query}
+              activeStart={revisionHighlight.activeStart}
+              activeEnd={revisionHighlight.activeEnd}
             />
           )}
           <div className="essay-editor-shell">
-            <textarea
-              ref={textareaRef}
-              className="essay-textarea"
-              placeholder="Start your TOEFL essay here..."
-              value={text}
-              onChange={(e) => {
-                if (isTimerPaused) resumeTimer();
-                setText(e.target.value);
-                recordChange(e.target.value);
-              }}
+            <div className="essay-textarea-stack">
+              {editorFindHighlight && (
+                <EssayFindHighlightLayer
+                  text={text}
+                  query={editorFindHighlight.query}
+                  activeStart={editorFindHighlight.activeStart}
+                  activeEnd={editorFindHighlight.activeEnd}
+                  revealActiveMatch={editorFindHighlight.revealActiveMatch}
+                  textareaRef={textareaRef}
+                />
+              )}
+              <textarea
+                ref={textareaRef}
+                className={`essay-textarea${editorFindHighlight ? ' has-find-highlights' : ''}`}
+                placeholder="Start your TOEFL essay here..."
+                value={text}
+                onChange={(e) => {
+                  if (isTimerPaused) resumeTimer();
+                  setEditorFindHighlight(null);
+                  setText(e.target.value);
+                  recordChange(e.target.value);
+                }}
               onKeyDown={(e) => {
                 if (isTimerPaused) resumeTimer();
                 recordKeyDown(e.key);
@@ -429,6 +485,7 @@ const Practice = () => {
                 recordPaste();
               }}
             />
+            </div>
             <div className="word-count-badge">
               {text.trim() ? text.trim().split(/\s+/).length : 0} WORDS
             </div>
