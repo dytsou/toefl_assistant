@@ -478,6 +478,34 @@ nav.main-nav {
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
+.essay-textarea-stack {
+  position: relative;
+}
+
+.essay-find-highlight-layer {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 14px;
+}
+
+.essay-find-highlight-layer-inner {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 28px 28px 64px;
+  border: 1px solid transparent;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  will-change: transform;
+}
+
 .essay-textarea {
   width: 100%;
   min-height: 500px;
@@ -498,6 +526,15 @@ nav.main-nav {
 .essay-textarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
+}
+
+.essay-textarea.has-find-highlights {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--color-text);
 }
 
 .word-count-badge {
@@ -2279,11 +2316,32 @@ nav.main-nav {
 }
 
 .writing-find-result-snippet mark,
-.writing-search-highlight mark {
-  background: #fde68a;
-  color: var(--color-text);
-  padding: 0 1px;
-  border-radius: 2px;
+.writing-search-highlight mark,
+.essay-find-highlight-layer mark {
+  background-color: #fef3c7;
+  color: #1e293b;
+  padding: 0;
+  border-radius: 0;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.writing-find-result-snippet mark.is-active-match,
+.writing-search-highlight mark.is-active-match,
+.essay-find-highlight-layer mark.is-active-match {
+  background-color: #fde68a;
+  color: #1e293b;
+}
+
+.essay-textarea.has-find-highlights::selection {
+  background-color: #fde68a;
+  color: #1e293b;
+  -webkit-text-fill-color: #1e293b;
+}
+
+.essay-textarea.has-find-highlights::-moz-selection {
+  background-color: #fde68a;
+  color: #1e293b;
 }
 
 .writing-search-highlight {

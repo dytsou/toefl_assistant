@@ -1,24 +1,38 @@
+import { useEffect, useMemo, useRef } from "react";
+import { FindHighlightedText } from "./FindHighlightedText";
+import { highlightTextMatches } from "../lib/writingTextHighlight";
+
 type WritingSearchHighlightProps = {
   text: string;
-  start: number;
-  end: number;
+  query: string;
+  activeStart: number;
+  activeEnd: number;
 };
 
 export function WritingSearchHighlight({
   text,
-  start,
-  end,
+  query,
+  activeStart,
+  activeEnd,
 }: WritingSearchHighlightProps) {
-  const safeStart = Math.max(0, Math.min(start, text.length));
-  const safeEnd = Math.max(safeStart, Math.min(end, text.length));
+  const activeMarkRef = useRef<HTMLElement>(null);
+  const segments = useMemo(
+    () => highlightTextMatches(text, query, activeStart, activeEnd),
+    [text, query, activeStart, activeEnd],
+  );
+
+  useEffect(() => {
+    activeMarkRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: "instant",
+    });
+  }, [text, query, activeStart, activeEnd]);
 
   return (
     <div className="writing-search-highlight card" data-testid="writing-search-highlight">
       <p className="writing-search-highlight-label">Found in this revision</p>
       <p className="writing-search-highlight-text">
-        {text.slice(0, safeStart)}
-        <mark>{text.slice(safeStart, safeEnd)}</mark>
-        {text.slice(safeEnd)}
+        <FindHighlightedText segments={segments} activeMarkRef={activeMarkRef} />
       </p>
     </div>
   );
