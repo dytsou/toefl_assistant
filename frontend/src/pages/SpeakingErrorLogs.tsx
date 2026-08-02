@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Check,
   ChevronRight,
@@ -74,6 +75,7 @@ interface SpeakingErrorLog {
     partIndex: number;
     session: {
       question: {
+        id: number;
         title: string;
       };
     };
@@ -319,7 +321,12 @@ const SpeakingErrorLogs = () => {
                           )}
 
                           <div className="edit-source">
-                            <span>{log.part.session.question.title}</span>
+                            <Link
+                              to={`/speaking/${log.part.session.question.id}/history/${log.part.partIndex}`}
+                              className="edit-source-link"
+                            >
+                              {log.part.session.question.title}
+                            </Link>
                           </div>
                         </article>
                       ))}

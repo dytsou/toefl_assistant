@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Book, Check, ChevronRight, ClipboardList, MessageCircle, PenLine, Quote, ShieldCheck, Star, Users } from 'lucide-react';
 import { api } from '../api';
 import { TypingStatsPanel } from '../components/TypingStatsPanel';
@@ -61,9 +61,11 @@ interface ErrorLogRow {
   important: boolean;
   createdAt: string;
   revision: {
+    id: number;
     text: string;
     submission: {
       question: {
+        id: number;
         type: string;
         title: string;
       };
@@ -296,7 +298,12 @@ const ErrorLogs = () => {
 
                             <div className="edit-source">
                               <Book size={14} />
-                              <span>{log.revision.submission.question.title}</span>
+                              <Link
+                                to={`/practice/${log.revision.submission.question.id}`}
+                                className="edit-source-link"
+                              >
+                                {log.revision.submission.question.title}
+                              </Link>
                             </div>
                           </article>
                         ))}

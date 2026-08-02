@@ -953,6 +953,20 @@ nav.main-nav {
   font-size: 0.78rem;
 }
 
+.edit-source-link {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.edit-source-link:hover {
+  color: var(--color-primary);
+  text-decoration-color: currentColor;
+}
+
 .empty-state {
   padding: 36px 24px;
   border: 1.5px dashed var(--color-border);
