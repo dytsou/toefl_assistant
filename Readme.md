@@ -20,6 +20,9 @@ Currently, the platform supports two core modules: Writing (including Email and 
 - **口說診斷**：針對 Pronunciation, Fluency, Grammar, Elaboration 等維度進行分析。
 - **歷史紀錄**：可回聽錄音檔、查看 AI 評分與改進建議。
 
+### 📄 Google Docs userscript (no FE/BE)
+Zero-server Writing practice via Tampermonkey: generate → sidebar practice → Gemini score → append to the focused Doc. See `userscripts/gdocs-writing-practice/README.md`.
+
 ## 技術架構
 
 ### Frontend
