@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TOEFL Writing Practice (Google Docs)
-// @namespace    https://github.com/dytsou/toefl_writing_assistant
+// @namespace    https://github.com/dytsou/toefl_assistant
 // @version      1.0.1
 // @description  Generate TOEFL Writing prompts, practice in a sidebar, score with Gemini, append to the Doc
 // @author       dytsou
