@@ -42,18 +42,19 @@ const parts = ORDER.map((name) => {
 
 const header = `// ==UserScript==
 // @name         TOEFL Writing Practice (Google Docs)
-// @namespace    https://github.com/local/toefl_writing_assistant
-// @version      1.0.0
+// @namespace    https://github.com/dytsou/toefl_writing_assistant
+// @version      1.0.1
 // @description  Generate TOEFL Writing prompts, practice in a sidebar, score with Gemini, append to the Doc
-// @author       local
+// @author       dytsou
 // @match        https://docs.google.com/document/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @connect      generativelanguage.googleapis.com
 // @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/dytsou/toefl_assistant/dev/userscripts/gdocs-writing-practice/toefl-writing-practice.user.js
+// @downloadURL  https://raw.githubusercontent.com/dytsou/toefl_assistant/dev/userscripts/gdocs-writing-practice/toefl-writing-practice.user.js
 // ==/UserScript==
-
 `;
 
 const body = `(function () {
